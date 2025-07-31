@@ -1,11 +1,136 @@
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br> 
-<br>
-<br>
-<br>
-<h1><center>Currently under construction! Will be up later&trade;.</center></h1>
+// A Wordle-like color guessing game
+import React, { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+
+const COLORS = [
+  "red", "blue", "green", "yellow", "orange", "purple", "pink", "brown", "gray"
+];
+
+function generateSecret() {
+  let colors = [...COLORS];
+  return Array.from({ length: 4 }, () => colors.splice(Math.floor(Math.random() * colors.length), 1)[0]);
+}
+
+function evaluateGuess(secret, guess) {
+  let correctPlace = 0;
+  let correctColor = 0;
+  let secretCopy = [...secret];
+  let guessCopy = [...guess];
+
+  // Count correct positions first
+  for (let i = 0; i < 4; i++) {
+    if (guess[i] === secret[i]) {
+      correctPlace++;
+      secretCopy[i] = null;
+      guessCopy[i] = null;
+    }
+  }
+
+  // Then count correct colors in wrong places
+  for (let i = 0; i < 4; i++) {
+    if (guessCopy[i] && secretCopy.includes(guessCopy[i])) {
+      correctColor++;
+      secretCopy[secretCopy.indexOf(guessCopy[i])] = null;
+    }
+  }
+
+  return { correctPlace, correctColor };
+}
+
+export default function ColorGame() {
+  const [secret, setSecret] = useState(generateSecret);
+  const [guesses, setGuesses] = useState([]);
+  const [currentGuess, setCurrentGuess] = useState([]);
+  const [gameOver, setGameOver] = useState(false);
+
+  const handleColorSelect = (color) => {
+    if (currentGuess.length < 4 && !currentGuess.includes(color)) {
+      setCurrentGuess([...currentGuess, color]);
+    }
+  };
+
+  const handleSubmit = () => {
+    if (currentGuess.length !== 4) return;
+    const result = evaluateGuess(secret, currentGuess);
+    const newGuesses = [...guesses, { guess: currentGuess, result }];
+    setGuesses(newGuesses);
+    setCurrentGuess([]);
+    if (result.correctPlace === 4 || newGuesses.length === 6) {
+      setGameOver(true);
+    }
+  };
+
+  const handleReset = () => {
+    setSecret(generateSecret());
+    setGuesses([]);
+    setCurrentGuess([]);
+    setGameOver(false);
+  };
+
+  return (
+    <div className="p-4 space-y-4">
+      <Card>
+        <CardContent className="space-y-2">
+          <div className="text-xl font-bold">Color Pattern Game</div>
+          <div className="flex flex-wrap gap-2">
+            {COLORS.map((color) => (
+              <Button
+                key={color}
+                className="capitalize"
+                style={{ backgroundColor: color, color: "white" }}
+                onClick={() => handleColorSelect(color)}
+                disabled={currentGuess.includes(color) || gameOver}
+              >
+                {color}
+              </Button>
+            ))}
+          </div>
+          <div className="flex gap-2 mt-4">
+            {currentGuess.map((color, i) => (
+              <div
+                key={i}
+                className="w-10 h-10 rounded-full"
+                style={{ backgroundColor: color }}
+              ></div>
+            ))}
+          </div>
+          <Button onClick={handleSubmit} disabled={currentGuess.length !== 4 || gameOver}>
+            Submit Guess
+          </Button>
+          <Button variant="outline" onClick={handleReset}>
+            Reset Game
+          </Button>
+        </CardContent>
+      </Card>
+
+      <div className="space-y-2">
+        {guesses.map((entry, idx) => (
+          <Card key={idx} className="p-2">
+            <div className="flex gap-2 items-center">
+              {entry.guess.map((color, i) => (
+                <div
+                  key={i}
+                  className="w-8 h-8 rounded-full"
+                  style={{ backgroundColor: color }}
+                ></div>
+              ))}
+              <div className="ml-4">
+                {entry.result.correctPlace} in right spot, {entry.result.correctColor} correct color
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+
+      {gameOver && (
+        <div className="text-xl font-bold text-center mt-4">
+          {guesses[guesses.length - 1].result.correctPlace === 4
+            ? "You guessed it!"
+            : `Game Over! The pattern was: ${secret.join(", ")}`}
+        </div>
+      )}
+    </div>
+  );
+}
