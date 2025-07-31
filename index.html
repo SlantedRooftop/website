@@ -1,4 +1,65 @@
-<script>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Color Pattern Game</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      max-width: 600px;
+      margin: auto;
+    }
+    .colors, .guess, .history, .secret-input {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .color-btn {
+      width: 50px;
+      height: 50px;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+    .disabled {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+    .circle {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+    }
+    .guess-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>2-Player Color Pattern Game</h1>
+
+  <div id="setup">
+    <h2>Player 1: Choose a secret 4-color pattern</h2>
+    <div class="colors" id="secretColors"></div>
+    <div class="guess" id="secretGuess"></div>
+    <button onclick="lockSecret()" id="lockBtn" disabled>Lock In Secret</button>
+  </div>
+
+  <div id="game" style="display:none;">
+    <h2>Player 2: Make a Guess</h2>
+    <div class="colors" id="colorButtons"></div>
+    <div class="guess" id="currentGuess"></div>
+    <button onclick="submitGuess()" id="submitBtn" disabled>Submit Guess</button>
+    <div class="history" id="guessHistory"></div>
+    <div id="result" style="font-weight:bold; margin-top: 10px;"></div>
+    <button onclick="resetGame()">Restart</button>
+  </div>
+
+  <script>
   const COLORS = ["red", "blue", "green", "yellow", "orange", "purple", "pink", "brown", "gray"];
   let secret = [];
   let currentGuess = [];
@@ -134,3 +195,6 @@
   // Initial setup
   createColorButtons(secretColorsDiv, handleSecretColor);
 </script>
+
+</body>
+</html>
