@@ -1,136 +1,136 @@
-// A Wordle-like color guessing game
-import React, { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+<script>
+  const COLORS = ["red", "blue", "green", "yellow", "orange", "purple", "pink", "brown", "gray"];
+  let secret = [];
+  let currentGuess = [];
+  let guesses = [];
+  let gameOver = false;
 
-const COLORS = [
-  "red", "blue", "green", "yellow", "orange", "purple", "pink", "brown", "gray"
-];
+  const secretColorsDiv = document.getElementById("secretColors");
+  const secretGuessDiv = document.getElementById("secretGuess");
+  const colorButtonsDiv = document.getElementById("colorButtons");
+  const currentGuessDiv = document.getElementById("currentGuess");
+  const guessHistoryDiv = document.getElementById("guessHistory");
+  const submitBtn = document.getElementById("submitBtn");
+  const lockBtn = document.getElementById("lockBtn");
+  const gameSection = document.getElementById("game");
 
-function generateSecret() {
-  let colors = [...COLORS];
-  return Array.from({ length: 4 }, () => colors.splice(Math.floor(Math.random() * colors.length), 1)[0]);
-}
+  function createColorButtons(container, callback) {
+    container.innerHTML = "";
+    COLORS.forEach(color => {
+      const btn = document.createElement("button");
+      btn.className = "color-btn";
+      btn.style.backgroundColor = color;
+      btn.onclick = () => callback(color);
+      container.appendChild(btn);
+    });
+  }
 
-function evaluateGuess(secret, guess) {
-  let correctPlace = 0;
-  let correctColor = 0;
-  let secretCopy = [...secret];
-  let guessCopy = [...guess];
+  function renderSelectedColors(container, list) {
+    container.innerHTML = "";
+    list.forEach((color, index) => {
+      const circle = document.createElement("div");
+      circle.className = "circle";
+      circle.style.backgroundColor = color;
+      container.appendChild(circle);
+    });
+  }
 
-  // Count correct positions first
-  for (let i = 0; i < 4; i++) {
-    if (guess[i] === secret[i]) {
-      correctPlace++;
-      secretCopy[i] = null;
-      guessCopy[i] = null;
+  function handleSecretColor(color) {
+    if (secret.length < 4) {
+      secret.push(color);
+      renderSelectedColors(secretGuessDiv, secret);
+      if (secret.length === 4) lockBtn.disabled = false;
     }
   }
 
-  // Then count correct colors in wrong places
-  for (let i = 0; i < 4; i++) {
-    if (guessCopy[i] && secretCopy.includes(guessCopy[i])) {
-      correctColor++;
-      secretCopy[secretCopy.indexOf(guessCopy[i])] = null;
+  function lockSecret() {
+    document.getElementById("setup").style.display = "none";
+    gameSection.style.display = "block";
+    createColorButtons(colorButtonsDiv, handleGuessColor);
+  }
+
+  function handleGuessColor(color) {
+    if (currentGuess.length < 4) {
+      currentGuess.push(color);
+      renderSelectedColors(currentGuessDiv, currentGuess);
+      if (currentGuess.length === 4) submitBtn.disabled = false;
     }
   }
 
-  return { correctPlace, correctColor };
-}
-
-export default function ColorGame() {
-  const [secret, setSecret] = useState(generateSecret);
-  const [guesses, setGuesses] = useState([]);
-  const [currentGuess, setCurrentGuess] = useState([]);
-  const [gameOver, setGameOver] = useState(false);
-
-  const handleColorSelect = (color) => {
-    if (currentGuess.length < 4 && !currentGuess.includes(color)) {
-      setCurrentGuess([...currentGuess, color]);
-    }
-  };
-
-  const handleSubmit = () => {
-    if (currentGuess.length !== 4) return;
+  function submitGuess() {
+    if (gameOver || currentGuess.length !== 4) return;
     const result = evaluateGuess(secret, currentGuess);
-    const newGuesses = [...guesses, { guess: currentGuess, result }];
-    setGuesses(newGuesses);
-    setCurrentGuess([]);
-    if (result.correctPlace === 4 || newGuesses.length === 6) {
-      setGameOver(true);
+    guesses.push({ guess: [...currentGuess], result });
+
+    const row = document.createElement("div");
+    row.className = "guess-row";
+    currentGuess.forEach(color => {
+      const dot = document.createElement("div");
+      dot.className = "circle";
+      dot.style.backgroundColor = color;
+      row.appendChild(dot);
+    });
+    const info = document.createElement("span");
+    info.textContent = `- ${result.correctPlace} right spot, ${result.correctColor} right color`;
+    row.appendChild(info);
+    guessHistoryDiv.appendChild(row);
+
+    if (result.correctPlace === 4) {
+      document.getElementById("result").textContent = "You guessed it!";
+      gameOver = true;
+    } else if (guesses.length === 6) {
+      document.getElementById("result").textContent = `Out of tries! The pattern was: ${secret.join(", ")}`;
+      gameOver = true;
     }
-  };
 
-  const handleReset = () => {
-    setSecret(generateSecret());
-    setGuesses([]);
-    setCurrentGuess([]);
-    setGameOver(false);
-  };
+    currentGuess = [];
+    renderSelectedColors(currentGuessDiv, []);
+    submitBtn.disabled = true;
+  }
 
-  return (
-    <div className="p-4 space-y-4">
-      <Card>
-        <CardContent className="space-y-2">
-          <div className="text-xl font-bold">Color Pattern Game</div>
-          <div className="flex flex-wrap gap-2">
-            {COLORS.map((color) => (
-              <Button
-                key={color}
-                className="capitalize"
-                style={{ backgroundColor: color, color: "white" }}
-                onClick={() => handleColorSelect(color)}
-                disabled={currentGuess.includes(color) || gameOver}
-              >
-                {color}
-              </Button>
-            ))}
-          </div>
-          <div className="flex gap-2 mt-4">
-            {currentGuess.map((color, i) => (
-              <div
-                key={i}
-                className="w-10 h-10 rounded-full"
-                style={{ backgroundColor: color }}
-              ></div>
-            ))}
-          </div>
-          <Button onClick={handleSubmit} disabled={currentGuess.length !== 4 || gameOver}>
-            Submit Guess
-          </Button>
-          <Button variant="outline" onClick={handleReset}>
-            Reset Game
-          </Button>
-        </CardContent>
-      </Card>
+  function evaluateGuess(secret, guess) {
+    let correctPlace = 0;
+    let correctColor = 0;
+    let secretCopy = [...secret];
+    let guessCopy = [...guess];
 
-      <div className="space-y-2">
-        {guesses.map((entry, idx) => (
-          <Card key={idx} className="p-2">
-            <div className="flex gap-2 items-center">
-              {entry.guess.map((color, i) => (
-                <div
-                  key={i}
-                  className="w-8 h-8 rounded-full"
-                  style={{ backgroundColor: color }}
-                ></div>
-              ))}
-              <div className="ml-4">
-                {entry.result.correctPlace} in right spot, {entry.result.correctColor} correct color
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
+    for (let i = 0; i < 4; i++) {
+      if (guess[i] === secret[i]) {
+        correctPlace++;
+        secretCopy[i] = null;
+        guessCopy[i] = null;
+      }
+    }
 
-      {gameOver && (
-        <div className="text-xl font-bold text-center mt-4">
-          {guesses[guesses.length - 1].result.correctPlace === 4
-            ? "You guessed it!"
-            : `Game Over! The pattern was: ${secret.join(", ")}`}
-        </div>
-      )}
-    </div>
-  );
-}
+    for (let i = 0; i < 4; i++) {
+      if (guessCopy[i]) {
+        let index = secretCopy.indexOf(guessCopy[i]);
+        if (index !== -1) {
+          correctColor++;
+          secretCopy[index] = null;
+        }
+      }
+    }
+
+    return { correctPlace, correctColor };
+  }
+
+  function resetGame() {
+    secret = [];
+    currentGuess = [];
+    guesses = [];
+    gameOver = false;
+    secretGuessDiv.innerHTML = "";
+    currentGuessDiv.innerHTML = "";
+    guessHistoryDiv.innerHTML = "";
+    document.getElementById("result").textContent = "";
+    lockBtn.disabled = true;
+    submitBtn.disabled = true;
+    document.getElementById("setup").style.display = "block";
+    gameSection.style.display = "none";
+    createColorButtons(secretColorsDiv, handleSecretColor);
+  }
+
+  // Initial setup
+  createColorButtons(secretColorsDiv, handleSecretColor);
+</script>
